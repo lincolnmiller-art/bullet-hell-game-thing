@@ -3,8 +3,8 @@ import java.util.ArrayList;
 
 public class PurpleBoss {
     private int x, y;
-    private int hp = 150;
-    private int maxHp = 150;
+    private int hp = 250;
+    private int maxHp = 250;
     private int attackState = 0; // 0 = beam spam, 1 = beam spin, 2 = dash attack, 3 = spiral bullets
     private int attackTimer = 0;
     private int stateTransitionTimer = 0;
@@ -70,7 +70,7 @@ public class PurpleBoss {
         }
 
         // Boss slowly spins at all times
-        bossRotation += 0.005;
+        bossRotation += 0.01;
         if (bossRotation > Math.PI * 2) bossRotation -= Math.PI * 2;
 
         // Dash finish cue countdown
@@ -139,9 +139,9 @@ public class PurpleBoss {
         }
 
         // Fire beams less frequently - every 30 frames instead of 15
-        if (attackTimer % 30 == 0) {
+        if (attackTimer % 25 == 0) {
             // Fire 1-2 beams in random directions
-            int beamCount = 1 + (int)(Math.random() * 2);
+            int beamCount = 4 + (int)(Math.random() * 4);
             for (int i = 0; i < beamCount; i++) {
                 double beamAngle = Math.random() * Math.PI * 2;
                 Beam beam = new Beam(x, y, screenWidth, screenHeight, beamAngle);
@@ -225,7 +225,7 @@ public class PurpleBoss {
         // Calculate number of dashes based on HP percentage
         if (dashAttackQueue.isEmpty() && attackTimer < 50) {
             int hpPercent = (hp * 100) / maxHp;
-            int dashCount = 1 + (100 - hpPercent) / 25; // 1-4 dashes as HP depletes
+            int dashCount = 2 + (100 - hpPercent) / 5; // 2-5 dashes as HP depletes
             for (int i = 0; i < dashCount; i++) {
                 dashAttackQueue.add(i);
             }
@@ -253,11 +253,11 @@ public class PurpleBoss {
                 }
                 
                 // Move in dash direction
-                x += Math.cos(dashAngle) * 14;
-                y += Math.sin(dashAngle) * 14;
+                x += Math.cos(dashAngle) * 16;
+                y += Math.sin(dashAngle) * 16;
 
                 // Fire bullets occasionally while dashing
-                if (dashTimer % 20 == 0 && Math.random() > 0.5) {
+                if (dashTimer % 20 == 0 && Math.random() > 0.3) {
                     // Random bullets or beams
                     if (Math.random() > 0.6) {
                         // Fire beam

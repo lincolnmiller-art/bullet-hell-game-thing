@@ -75,17 +75,24 @@ public class PurpleCircleEnemy {
                     int beamY = beamPositions.get(i)[1];
                     double angle = beamRotation + (i * Math.PI * 2 / 5);
                     Beam beam = new Beam(beamX, beamY, screenWidth, screenHeight, angle);
-                    beam.setRemoveAfterFade(true); // Ensure beams fully fade
+                    //beam.setRemoveAfterFade(true); // Ensure beams fully fade
                     beams.add(beam);
                 }
             }
         } else if (rotationState == 2) {
             // Firing state - update beams
             for (Beam beam : beams) {
+                
                 beam.update();
             }
             // Remove finished beams
-            beams.removeIf(Beam::isFinished);
+            for (int i = beams.size() - 1; i >= 0; i--) {
+            Beam beam = beams.get(i);
+            beam.update();
+            if (beam.isFinished()) {
+                beams.remove(i);
+            }
+        }
             
             fireTimer++;
             if (fireTimer > 60) {

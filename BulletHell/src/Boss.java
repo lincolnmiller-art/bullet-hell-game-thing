@@ -22,7 +22,7 @@ public class Boss {
 
     public void update(int width, int height, int wave) {
         // Boss moves slowly
-        x += (Math.random() - 0.5) * 2;
+        x += (Math.random() - 1) * 2;
         x = Math.max(50, Math.min(width - 50, x));
 
         patternTimer++;
@@ -54,7 +54,7 @@ public class Boss {
         if (attackPattern == 3) {
             beamSpawnTimer++;
             if (beamSpawnTimer == 1) {
-                int numBeams = 1 + (int)(Math.random() * 4); // 1-4 beams
+                int numBeams = 2 + (int)(Math.random() * 5); // 2-6 beams
                 for (int i = 0; i < numBeams; i++) {
                     int beamX = 100 + (int)(Math.random() * (width - 200));
                     int beamY = 100 + (int)(Math.random() * (height - 200));
