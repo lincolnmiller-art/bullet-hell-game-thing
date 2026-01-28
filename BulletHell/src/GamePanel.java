@@ -14,12 +14,15 @@ public class GamePanel extends JPanel {
     private ArrayList<TriangleEnemy> triangleEnemies;
     private ArrayList<GreenTriangleEnemy> greenTriangleEnemies;
     private ArrayList<PurpleTriangleEnemy> purpleTriangleEnemies;
+    private ArrayList<RedTriangleEnemy> redTriangleEnemies;
     private ArrayList<PurpleCircleEnemy> purpleCircleEnemies;
+    private ArrayList<GreenCircleEnemy> greenCircleEnemies;
     private ArrayList<PlayerProjectile> playerProjectiles;
     private ArrayList<EnemyProjectile> enemyProjectiles;
     private ArrayList<HealingItem> healingItems;
     private Boss boss;
     private PurpleBoss purpleBoss;
+    private ArrayList<Object[]> recentlyDeadEnemies;
     private int waveNumber = 1;
     private boolean waveInProgress = false;
     private int enemiesSpawned = 0;
@@ -57,7 +60,10 @@ public class GamePanel extends JPanel {
         triangleEnemies = new ArrayList<>();
         greenTriangleEnemies = new ArrayList<>();
         purpleTriangleEnemies = new ArrayList<>();
+        redTriangleEnemies = new ArrayList<>();
         purpleCircleEnemies = new ArrayList<>();
+        recentlyDeadEnemies = new ArrayList<>();
+        greenCircleEnemies = new ArrayList<>();
         playerProjectiles = new ArrayList<>();
         enemyProjectiles = new ArrayList<>();
         
@@ -219,6 +225,9 @@ public class GamePanel extends JPanel {
             // Scale enemy spawning based on wave
             // Regular enemies cap at lower numbers, triangles and green triangles increase
             int regularEnemies = Math.min(2 + waveNumber / 5, 3);
+            if (waveNumber > 20) {
+                regularEnemies = Math.max(0, regularEnemies - 1);
+            }
             //if (!purpleCircleEnemies.isEmpty()) {
                 //regularEnemies = Math.max(0, regularEnemies - 2); // Further reduce when purple circles present
             //}
@@ -231,6 +240,9 @@ public class GamePanel extends JPanel {
             if (waveNumber >= 2) {
                 int triangleCount = 1 + (waveNumber - 2) / 2;
                 triangleCount = Math.min(triangleCount, 4);
+                if (waveNumber > 20) {
+                    triangleCount = Math.max(0, triangleCount - 1);
+                }
                 if (!purpleCircleEnemies.isEmpty()) {
                     triangleCount = Math.max(0, triangleCount - 2); // Further reduce when purple circles present
                 }
@@ -244,6 +256,9 @@ public class GamePanel extends JPanel {
             if (waveNumber >= 5) {
                 int triangleCount = 1 + (waveNumber - 5) / 3;
                 triangleCount = Math.min(triangleCount, 5);
+                if (waveNumber > 20) {
+                    triangleCount = Math.max(0, triangleCount - 1);
+                }
                 if (!purpleCircleEnemies.isEmpty()) {
                     triangleCount = Math.max(1, triangleCount - 2); // Further reduce when purple circles present
                 }
@@ -253,7 +268,11 @@ public class GamePanel extends JPanel {
                     for (int i = 0; i < triangleCount; i++) {
                         int spawnX = WIDTH / 3 + (i % 2) * (WIDTH / 3) + (int)(Math.random() * 80 - 40);
                         int spawnY = HEIGHT / 3 + (int)(Math.random() * 60 - 30);
-                        purpleTriangleEnemies.add(new PurpleTriangleEnemy(spawnX, spawnY));
+                        if (waveNumber >= 25) {
+                            redTriangleEnemies.add(new RedTriangleEnemy(spawnX, spawnY));
+                        } else {
+                            purpleTriangleEnemies.add(new PurpleTriangleEnemy(spawnX, spawnY));
+                        }
                     }
                 } else {
                     // Use green triangles before wave 15
@@ -270,9 +289,21 @@ public class GamePanel extends JPanel {
                 int purpleCircleCount = 1 + (waveNumber - 11) / 5;
                 purpleCircleCount = Math.min(purpleCircleCount, 3);
                 for (int i = 0; i < purpleCircleCount; i++) {
-                    int spawnX = WIDTH / 2 + (int)(Math.random() * 300 - 150);
-                    int spawnY = HEIGHT / 2 + (int)(Math.random() * 150 - 75);
+                    int spawnX = 100 + (int)(Math.random() * (WIDTH - 200));
+                    int spawnY = 100 + (int)(Math.random() * (HEIGHT - 200));
                     purpleCircleEnemies.add(new PurpleCircleEnemy(spawnX, spawnY, WIDTH, HEIGHT));
+                }
+            }
+
+
+            // Spawn green circle enemies starting after wave 20
+            if (waveNumber >= 21) {
+                int greenCircleCount = 1 + (waveNumber - 21) / 10;
+                greenCircleCount = Math.min(greenCircleCount, 2);
+                for (int i = 0; i < greenCircleCount; i++) {
+                    int spawnX = WIDTH / 2 + (int)(Math.random() * 400 - 200);
+                    int spawnY = HEIGHT / 3 + (int)(Math.random() * 120 - 60);
+                    greenCircleEnemies.add(new GreenCircleEnemy(spawnX, spawnY, WIDTH, HEIGHT));
                 }
             }
         }
@@ -341,6 +372,8 @@ public class GamePanel extends JPanel {
                     if (Math.random() < 0.25) {
                         healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
                     }
+                    // Record exact dead enemy for potential revival
+                    recentlyDeadEnemies.add(new Object[]{"Enemy", enemy.getX(), enemy.getY()});
                     enemies.remove(i);
                 }
             }
@@ -454,6 +487,7 @@ public class GamePanel extends JPanel {
                 if (Math.random() < 0.3) {
                     healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
                 }
+                recentlyDeadEnemies.add(new Object[]{"TriangleEnemy", enemy.getX(), enemy.getY()});
                 triangleEnemies.remove(i);
             }
         }
@@ -484,6 +518,7 @@ public class GamePanel extends JPanel {
                 if (Math.random() < 0.4) {
                     healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
                 }
+                recentlyDeadEnemies.add(new Object[]{"GreenTriangleEnemy", enemy.getX(), enemy.getY()});
                 greenTriangleEnemies.remove(i);
             }
         }
@@ -514,7 +549,35 @@ public class GamePanel extends JPanel {
                 if (Math.random() < 0.4) {
                     healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
                 }
+                recentlyDeadEnemies.add(new Object[]{"PurpleTriangleEnemy", enemy.getX(), enemy.getY()});
                 purpleTriangleEnemies.remove(i);
+            }
+        }
+
+        // Red triangle enemy updates (waves 25+)
+        for (int i = redTriangleEnemies.size() - 1; i >= 0; i--) {
+            RedTriangleEnemy enemy = redTriangleEnemies.get(i);
+            enemy.update(WIDTH, HEIGHT, player.getX(), player.getY(), player.hasSlowField());
+            enemy.spawnProjectiles(enemyProjectiles, player.getX(), player.getY());
+
+            // Check player projectile collisions
+            for (int j = playerProjectiles.size() - 1; j >= 0; j--) {
+                PlayerProjectile proj = playerProjectiles.get(j);
+                if (enemy.collidesWith(proj.getX(), proj.getY())) {
+                    enemy.takeDamage(1);
+                    if (!proj.isPiercing()) playerProjectiles.remove(j);
+                    break;
+                }
+            }
+
+            // Check contact collision with player (damage while dashing/hitting)
+            if (enemy.collidesWith(player.getX(), player.getY())) {
+                player.takeDamage(2);
+            }
+
+            if (enemy.isDead()) {
+                recentlyDeadEnemies.add(new Object[]{"RedTriangleEnemy", enemy.getX(), enemy.getY()});
+                redTriangleEnemies.remove(i);
             }
         }
 
@@ -547,6 +610,7 @@ public class GamePanel extends JPanel {
                 if (Math.random() < 0.5) {
                     healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
                 }
+                recentlyDeadEnemies.add(new Object[]{"PurpleCircleEnemy", enemy.getX(), enemy.getY()});
                 purpleCircleEnemies.remove(i);
                 unlockAchievement("Purple Hunter");
             }
@@ -562,6 +626,108 @@ public class GamePanel extends JPanel {
                 } catch (Exception ex) {
                     // ignore
                 }
+            }
+        }
+
+        // Green circle enemy updates (can resummon dead enemies)
+        for (int i = greenCircleEnemies.size() - 1; i >= 0; i--) {
+            GreenCircleEnemy enemy = greenCircleEnemies.get(i);
+            enemy.update(WIDTH, HEIGHT, player.hasSlowField());
+
+            // Check player projectile collisions
+            for (int j = playerProjectiles.size() - 1; j >= 0; j--) {
+                PlayerProjectile proj = playerProjectiles.get(j);
+                if (enemy.collidesWith(proj.getX(), proj.getY())) {
+                    enemy.takeDamage(1);
+                    playerProjectiles.remove(j);
+                    break;
+                }
+            }
+
+            // Check contact collision with player
+            if (enemy.collidesWith(player.getX(), player.getY())) {
+                player.takeDamage(1);
+            }
+
+            // Process revive requests: GreenCircleEnemy returns a count; revive exact recently-dead enemies if available
+            int reviveCount = enemy.collectReviveRequests();
+            for (int rcount = 0; rcount < reviveCount; rcount++) {
+                if (!recentlyDeadEnemies.isEmpty()) {
+                    // Pop next recent death that is not a boss
+                    Object[] rec = null;
+                    while (!recentlyDeadEnemies.isEmpty()) {
+                        Object[] cand = recentlyDeadEnemies.remove(0);
+                        String candType = (String) cand[0];
+                        // Skip any type that refers to a boss
+                        if (candType != null && candType.contains("Boss")) {
+                            // skip boss revives
+                            continue;
+                        }
+                        rec = cand;
+                        break;
+                    }
+                    if (rec != null) {
+                        String type = (String) rec[0];
+                        int rx = (Integer) rec[1];
+                        int ry = (Integer) rec[2];
+                        // Recreate the exact enemy type at the same position
+                        switch (type) {
+                            case "TriangleEnemy":
+                                triangleEnemies.add(new TriangleEnemy(rx, ry));
+                                break;
+                            case "GreenTriangleEnemy":
+                                greenTriangleEnemies.add(new GreenTriangleEnemy(rx, ry));
+                                break;
+                            case "PurpleTriangleEnemy":
+                                purpleTriangleEnemies.add(new PurpleTriangleEnemy(rx, ry));
+                                break;
+                            case "RedTriangleEnemy":
+                                redTriangleEnemies.add(new RedTriangleEnemy(rx, ry));
+                                break;
+                            case "PurpleCircleEnemy":
+                                purpleCircleEnemies.add(new PurpleCircleEnemy(rx, ry, WIDTH, HEIGHT));
+                                break;
+                            case "Enemy":
+                            default:
+                                enemies.add(new Enemy(rx, ry));
+                                break;
+                        }
+                        // Play revive sound and spawn green particle burst at revived position
+                        try { java.awt.Toolkit.getDefaultToolkit().beep(); } catch (Exception ex) {}
+                        for (int p = 0; p < 12; p++) {
+                            double pa = Math.random() * Math.PI * 2;
+                            int psz = 2 + (int)(Math.random() * 3);
+                            enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, psz, new Color(0, 220, 0), 0));
+                        }
+                    } else {
+                        // No non-boss recent deaths available: fallback spawn near green circle
+                        int rx = enemy.getX() + (int)(Math.random() * 160 - 80);
+                        int ry = enemy.getY() + (int)(Math.random() * 120 - 60);
+                        triangleEnemies.add(new TriangleEnemy(rx, ry));
+                        try { java.awt.Toolkit.getDefaultToolkit().beep(); } catch (Exception ex) {}
+                        for (int p = 0; p < 8; p++) {
+                            double pa = Math.random() * Math.PI * 2;
+                            enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, 2, new Color(0, 200, 0), 0));
+                        }
+                    }
+                } else {
+                    // Fallback: spawn a triangle near the green circle
+                    int rx = enemy.getX() + (int)(Math.random() * 160 - 80);
+                    int ry = enemy.getY() + (int)(Math.random() * 120 - 60);
+                    triangleEnemies.add(new TriangleEnemy(rx, ry));
+                    try { java.awt.Toolkit.getDefaultToolkit().beep(); } catch (Exception ex) {}
+                    for (int p = 0; p < 8; p++) {
+                        double pa = Math.random() * Math.PI * 2;
+                        enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, 2, new Color(0, 200, 0), 0));
+                    }
+                }
+            }
+
+            if (enemy.isDead()) {
+                if (Math.random() < 0.6) {
+                    healingItems.add(new HealingItem(enemy.getX(), enemy.getY()));
+                }
+                greenCircleEnemies.remove(i);
             }
         }
 
@@ -671,8 +837,16 @@ public class GamePanel extends JPanel {
             for (PurpleTriangleEnemy enemy : purpleTriangleEnemies) {
                 enemy.draw(g2d);
             }
+            // Draw red triangle enemies
+            for (RedTriangleEnemy enemy : redTriangleEnemies) {
+                enemy.draw(g2d);
+            }
             // Draw purple circle enemies
             for (PurpleCircleEnemy enemy : purpleCircleEnemies) {
+                enemy.draw(g2d);
+            }
+            // Draw green circle enemies
+            for (GreenCircleEnemy enemy : greenCircleEnemies) {
                 enemy.draw(g2d);
             }
         } else {
