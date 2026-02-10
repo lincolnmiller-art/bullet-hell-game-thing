@@ -59,7 +59,7 @@ public class PurpleTriangleEnemy {
                 while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
                 while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
                 // Slowly turn toward player (homing)
-                dashAngle += angleDiff * 0.05; // Gradual homing effect
+                dashAngle += angleDiff * 0.1; // Gradual homing effect
                 
                 int nextX = x + (int)(Math.cos(dashAngle) * DASH_SPEED);
                 int nextY = y + (int)(Math.sin(dashAngle) * DASH_SPEED);

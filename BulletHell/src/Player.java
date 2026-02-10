@@ -4,8 +4,8 @@ import java.util.Set;
 
 public class Player {
     private int x, y;
-    private int hp = 10;
-    private int maxHp = 10;
+    private int hp = 5;
+    private int maxHp = 5;
     private int dashCooldown = 0;
     private int shootCooldown = 0;
     private static final int SHOOT_COOLDOWN_BASE = 8;
@@ -15,8 +15,8 @@ public class Player {
     private ArrayList<int[]> trailPositions;
     private static final int DASH_SPEED = 10;
     private static final int MOVE_SPEED = 5;
-    private static final int DASH_DURATION_MAX = 15;
-    private int dashCooldownMax = 300;
+    private static final int DASH_DURATION_MAX = 20;
+    private int dashCooldownMax = 250;
     private int fireRateBonus = 0;
     private boolean piercingShots = false;
     private boolean tripleShot = false;

@@ -20,6 +20,7 @@ public class GamePanel extends JPanel {
     private ArrayList<PlayerProjectile> playerProjectiles;
     private ArrayList<EnemyProjectile> enemyProjectiles;
     private ArrayList<HealingItem> healingItems;
+    private ArrayList<ReviveEffect> reviveEffects;
     private Boss boss;
     private PurpleBoss purpleBoss;
     private ArrayList<Object[]> recentlyDeadEnemies;
@@ -44,6 +45,37 @@ public class GamePanel extends JPanel {
         this(achievements, 1); // Default to wave 1
     }
 
+    // Small visual effect used for revives
+    private static class ReviveEffect {
+        int x, y;
+        int timer;
+        int duration;
+        int maxSize;
+        Color color;
+
+        ReviveEffect(int x, int y, int duration, int maxSize, Color color) {
+            this.x = x; this.y = y; this.duration = duration; this.timer = duration; this.maxSize = maxSize; this.color = color;
+        }
+
+        // returns true while alive
+        boolean update() {
+            timer--;
+            return timer > 0;
+        }
+
+        void draw(Graphics2D g) {
+            float prog = 1f - (float)timer / (float)Math.max(1, duration);
+            float alpha = Math.max(0f, 1f - prog);
+            int size = 8 + (int)(prog * (maxSize - 8));
+            Color c = new Color(color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f, alpha * 0.95f);
+            g.setColor(c);
+            g.fillOval(x - size/2, y - size/2, size, size);
+            g.setColor(new Color(0f, 0f, 0f, alpha * 0.5f));
+            g.setStroke(new BasicStroke(2));
+            g.drawOval(x - size/2, y - size/2, size, size);
+        }
+    }
+
     public GamePanel(Achievements achievements, int startingWave) {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(Color.BLACK);
@@ -66,6 +98,7 @@ public class GamePanel extends JPanel {
         greenCircleEnemies = new ArrayList<>();
         playerProjectiles = new ArrayList<>();
         enemyProjectiles = new ArrayList<>();
+        reviveEffects = new ArrayList<>();
         
         pauseMenu = new PauseMenu(WIDTH, HEIGHT);
         pauseMenu.setListener(new PauseMenu.PauseMenuListener() {
@@ -263,8 +296,8 @@ public class GamePanel extends JPanel {
                     triangleCount = Math.max(1, triangleCount - 2); // Further reduce when purple circles present
                 }
                 
-                // Use purple triangles starting from wave 15
-                if (waveNumber >= 15) {
+                // Use purple triangles starting from wave 10
+                if (waveNumber >= 10) {
                     for (int i = 0; i < triangleCount; i++) {
                         int spawnX = WIDTH / 3 + (i % 2) * (WIDTH / 3) + (int)(Math.random() * 80 - 40);
                         int spawnY = HEIGHT / 3 + (int)(Math.random() * 60 - 30);
@@ -284,9 +317,9 @@ public class GamePanel extends JPanel {
                 }
             }
             
-            // Spawn purple circle enemies starting from wave 11
-            if (waveNumber >= 11) {
-                int purpleCircleCount = 1 + (waveNumber - 11) / 5;
+            // Spawn purple circle enemies starting from wave 15
+            if (waveNumber >= 15) {
+                int purpleCircleCount = 1 + (waveNumber - 15) / 5;
                 purpleCircleCount = Math.min(purpleCircleCount, 3);
                 for (int i = 0; i < purpleCircleCount; i++) {
                     int spawnX = 100 + (int)(Math.random() * (WIDTH - 200));
@@ -296,9 +329,9 @@ public class GamePanel extends JPanel {
             }
 
 
-            // Spawn green circle enemies starting after wave 20
-            if (waveNumber >= 21) {
-                int greenCircleCount = 1 + (waveNumber - 21) / 10;
+            // Spawn green circle enemies starting after wave 5
+            if (waveNumber >= 5) {
+                int greenCircleCount = 1 + (waveNumber - 5) / 10;
                 greenCircleCount = Math.min(greenCircleCount, 2);
                 for (int i = 0; i < greenCircleCount; i++) {
                     int spawnX = WIDTH / 2 + (int)(Math.random() * 400 - 200);
@@ -699,6 +732,8 @@ public class GamePanel extends JPanel {
                             int psz = 2 + (int)(Math.random() * 3);
                             enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, psz, new Color(0, 220, 0), 0));
                         }
+                        // Also add a localized revive visual effect on the revived enemy
+                        reviveEffects.add(new ReviveEffect(rx, ry, 50, 64, new Color(0, 220, 80)));
                     } else {
                         // No non-boss recent deaths available: fallback spawn near green circle
                         int rx = enemy.getX() + (int)(Math.random() * 160 - 80);
@@ -709,6 +744,7 @@ public class GamePanel extends JPanel {
                             double pa = Math.random() * Math.PI * 2;
                             enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, 2, new Color(0, 200, 0), 0));
                         }
+                        reviveEffects.add(new ReviveEffect(rx, ry, 40, 56, new Color(0, 200, 80)));
                     }
                 } else {
                     // Fallback: spawn a triangle near the green circle
@@ -720,6 +756,7 @@ public class GamePanel extends JPanel {
                         double pa = Math.random() * Math.PI * 2;
                         enemyProjectiles.add(new EnemyProjectile(rx, ry, pa, 2, new Color(0, 200, 0), 0));
                     }
+                    reviveEffects.add(new ReviveEffect(rx, ry, 40, 56, new Color(0, 200, 80)));
                 }
             }
 
@@ -755,6 +792,14 @@ public class GamePanel extends JPanel {
             } else if (player.collidesWith(proj.getX(), proj.getY())) {
                 player.takeDamage(proj.getDamage());
                 enemyProjectiles.remove(i);
+            }
+        }
+
+        // Revive effect updates
+        for (int i = reviveEffects.size() - 1; i >= 0; i--) {
+            ReviveEffect e = reviveEffects.get(i);
+            if (!e.update()) {
+                reviveEffects.remove(i);
             }
         }
 
@@ -848,6 +893,10 @@ public class GamePanel extends JPanel {
             // Draw green circle enemies
             for (GreenCircleEnemy enemy : greenCircleEnemies) {
                 enemy.draw(g2d);
+            }
+            // Draw revive effects (on top of enemies)
+            for (ReviveEffect e : reviveEffects) {
+                e.draw(g2d);
             }
         } else {
             if (waveNumber == 20 && purpleBoss != null) {

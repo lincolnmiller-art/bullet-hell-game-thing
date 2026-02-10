@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class GreenCircleEnemy {
     private int x, y;
-    private int hp = 6;
+    private int hp = 10;
     private int screenWidth, screenHeight;
     private int reviveTimer = 0;
     private int reviveInterval = 600; // every 10 seconds

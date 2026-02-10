@@ -4,7 +4,7 @@ public class Beam {
     private int x, y;
     private int state = 0; // 0 = warning, 1 = flashing beam, 2 = shrinking, 3 = fading out
     private int stateTimer = 0;
-    private int warningSize = 40;
+    private int warningSize = 50;
     private int screenWidth, screenHeight;
     private double angle; // Direction the beam fires
     private static final int WARNING_DURATION = 40; // Increased warning time

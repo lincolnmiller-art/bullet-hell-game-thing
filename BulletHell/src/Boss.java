@@ -15,7 +15,7 @@ public class Boss {
     public Boss(int x, int y, int wave) {
         this.x = x;
         this.y = y;
-        this.maxHP = 50 + (wave / 10) * 30;
+        this.maxHP = 50 + (wave / 5) * 30;
         this.hp = maxHP;
         this.beams = new ArrayList<>();
     }
@@ -54,7 +54,7 @@ public class Boss {
         if (attackPattern == 3) {
             beamSpawnTimer++;
             if (beamSpawnTimer == 1) {
-                int numBeams = 2 + (int)(Math.random() * 5); // 2-6 beams
+                int numBeams = 2 + (int)(Math.random() * 4); // 2-5 beams
                 if (hp < maxHP / 2) numBeams += 3;
                 if (hp < maxHP / 3) numBeams += 4;
                 for (int i = 0; i < numBeams; i++) {
